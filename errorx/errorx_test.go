@@ -7,13 +7,13 @@ import (
 
 func TestAddErrorx(t *testing.T) {
 	var (
-		CODE1, _ = AddErrorx(0, "code1 text")
-		CODE2, _ = AddErrorx(0, "code2 text")
-		CODE3, _ = AddErrorx(2, "code3 text")
-		CODE4, _ = AddErrorx(3, "code4 text")
-		CODE5, _ = AddErrorx(4, "code5 text")
-		CODE6, _ = AddErrorx(5, "code6 text")
-		CODE7, _ = AddErrorx(6, "code7 text")
+		CODE1, _ = Add(0, "code1 text")
+		CODE2, _ = Add(0, "code2 text")
+		CODE3, _ = Add(2, "code3 text")
+		CODE4, _ = Add(3, "code4 text")
+		CODE5, _ = Add(4, "code5 text")
+		CODE6, _ = Add(5, "code6 text")
+		CODE7, _ = Add(6, "code7 text")
 	)
 
 	fmt.Printf("%+v\n", GetAllRegCodes())

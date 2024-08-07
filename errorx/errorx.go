@@ -23,8 +23,20 @@ var defaultFailedError = &Error{
 
 var code2Error map[errCode]*Error = map[errCode]*Error{errCode(-10086): defaultFailedError}
 
-// 如果你可以保证code唯一，可以不判返回的error.
-func AddErrorx(code int, desc string) (errCode, error) {
+/*
+如果你可以保证code唯一，可以不判返回的error.
+var (
+
+		CODE1, _ = Add(0, "code1 text")
+		CODE2, _ = Add(0, "code2 text")
+		CODE3, _ = Add(2, "code3 text")
+		CODE4, _ = Add(3, "code4 text")
+		CODE5, _ = Add(4, "code5 text")
+		CODE6, _ = Add(5, "code6 text")
+		CODE7, _ = Add(6, "code7 text")
+	)
+*/
+func Add(code int, desc string) (errCode, error) {
 	if code2Error == nil {
 		code2Error = make(map[errCode]*Error, 0)
 	}

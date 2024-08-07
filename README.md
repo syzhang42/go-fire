@@ -10,6 +10,7 @@
 3、压测脚本，提供限定时间限定并发的压测。
 4、map、slice的格式化print.
 5、error便捷使用封装
+6、pulsar单addr,多topic,多worker便捷接口
 ```
 
 ......
