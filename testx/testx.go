@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	heapx "github.com/syzhang42/go-fire/fire/heap"
+	heapx "github.com/syzhang42/go-fire/heap"
 )
 
 type option func(t *Testx)
