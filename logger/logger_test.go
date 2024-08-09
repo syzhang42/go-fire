@@ -2,13 +2,9 @@ package logger
 
 import (
 	"testing"
-
-	"github.com/syzhang42/go-fire/log"
 )
 
 func TestXxx(t *testing.T) {
-
-	log.Default().SetFlags(log.Ldate | log.Ltime)
 	dl := NewLoggerWithLumberjack(
 		Config{
 			Level:    "debug",
