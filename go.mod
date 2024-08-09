@@ -6,6 +6,7 @@ require (
 	github.com/apache/pulsar-client-go v0.13.0
 	github.com/lestrrat/go-file-rotatelogs v0.0.0-20180223000712-d3151e2a480f
 	github.com/sirupsen/logrus v1.9.3
+	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
 	golang.org/x/sys v0.20.0
 )
 
@@ -51,7 +52,7 @@ require (
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
-	golang.org/x/mod v0.18.0 // indirect
+	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602 // indirect
 	golang.org/x/term v0.18.0 // indirect
