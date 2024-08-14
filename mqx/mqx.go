@@ -163,7 +163,9 @@ func (mm *MQManager) Send(topic string, ctx context.Context, data []byte, opt *P
 	return ErrInvalidTopic
 }
 
-func (mm *MQManager) Recv(exitCtx context.Context, topic string, msgcb func(Message)) {
+// exitCtx：优雅退出上下文，在你想要结束监听的地方cancel
+// 超时时间：second
+func (mm *MQManager) Recv(exitCtx context.Context, timeOut int64, topic string, msgcb func(Message)) {
 	var wg sync.WaitGroup
 	if consumers, ok := mm.consumers[topic]; ok && len(consumers) > 0 {
 		for index, consumer := range consumers {
@@ -176,7 +178,9 @@ func (mm *MQManager) Recv(exitCtx context.Context, topic string, msgcb func(Mess
 						fmt.Println(topic, index, ": recv go exit...")
 						return
 					default:
-						msg, err := consumer.Recv(context.Background())
+						ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeOut)*time.Second)
+						defer cancel()
+						msg, err := consumer.Recv(ctx)
 						if err != nil {
 							if strings.Contains(err.Error(), "No more data") {
 								time.Sleep(time.Millisecond * 100)
@@ -202,7 +206,7 @@ func (mm *MQManager) Recv(exitCtx context.Context, topic string, msgcb func(Mess
 			fmt.Println(topic, ":recv failed,err:", err)
 			return
 		}
-		mm.Recv(exitCtx, topic, msgcb)
+		mm.Recv(exitCtx, timeOut, topic, msgcb)
 	} else {
 		fmt.Println(topic, ":recv failed,err: len(consumer)==0")
 	}
