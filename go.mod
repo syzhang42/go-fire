@@ -1,6 +1,6 @@
 module github.com/syzhang42/go-fire
 
-go 1.22.5
+go 1.21.6
 
 require (
 	github.com/apache/pulsar-client-go v0.13.0
