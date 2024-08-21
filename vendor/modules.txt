@@ -177,6 +177,9 @@ golang.org/x/sys/windows
 # golang.org/x/term v0.18.0
 ## explicit; go 1.18
 golang.org/x/term
+# golang.org/x/time v0.0.0-20191024005414-555d28b269f0
+## explicit
+golang.org/x/time/rate
 # google.golang.org/appengine v1.6.7
 ## explicit; go 1.11
 google.golang.org/appengine/internal

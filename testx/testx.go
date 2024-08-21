@@ -2,13 +2,16 @@ package testx
 
 import (
 	"container/heap"
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
 	"sync"
 	"time"
 
-	heapx "github.com/syzhang42/go-fire/heap"
+	"golang.org/x/time/rate"
+
+	"github.com/syzhang42/go-fire/heapx"
 )
 
 type option func(t *Testx)
@@ -70,6 +73,13 @@ func SetThreadNum(i int) option {
 	}
 }
 
+// 默认无限制
+func SetQps(i int) option {
+	return func(t *Testx) {
+		t.qps = i
+	}
+}
+
 // 默认 60 单位s
 func SetdurTime(i int) option {
 	return func(t *Testx) {
@@ -100,6 +110,7 @@ type Testx struct {
 	percentile heapx.Heapx[int] //延迟堆
 	requests   int              //总请求
 
+	qps       int
 	threadNum int //并发数
 	durTime   int //持续时间  s
 	printTime int
@@ -124,6 +135,7 @@ func Begin(opts ...option) (res map[string]string, err error) {
 			useQps:     true,
 			percentile: *heapx.NewMinHeap([]int{}),
 
+			qps:       0,
 			threadNum: 4,
 			durTime:   60,
 			printTime: 60,
@@ -148,12 +160,19 @@ func Begin(opts ...option) (res map[string]string, err error) {
 	fmt.Println("begin:", "threadNum:", testx.threadNum, "durtime", testx.durTime, "......")
 
 	var wg sync.WaitGroup
+	limiter := rate.NewLimiter(rate.Limit(testx.qps), 1)
 	for i := 0; i < testx.threadNum; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			endTime := time.Now().Add(time.Duration(testx.durTime) * time.Second)
 			for time.Now().Before(endTime) {
+				if testx.qps > 0 {
+					err := limiter.Wait(context.Background())
+					if err != nil {
+						continue
+					}
+				}
 				todoBase := time.Now()
 				testx.todo()
 				todoElapsedFlt := time.Since(todoBase).Milliseconds()

@@ -8,6 +8,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
 	golang.org/x/sys v0.20.0
+	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 )
 
 require (
