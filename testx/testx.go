@@ -175,7 +175,7 @@ func Begin(opts ...option) (res map[string]string, err error) {
 				}
 				todoBase := time.Now()
 				testx.todo()
-				todoElapsedFlt := time.Since(todoBase).Milliseconds()
+				todoElapsedFlt := time.Since(todoBase).Microseconds()
 				testx.mu.Lock()
 				testx.requests = testx.requests + 1
 				heap.Push(&testx.percentile, int(todoElapsedFlt))
