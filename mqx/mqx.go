@@ -51,7 +51,7 @@ type MQManager struct {
 }
 
 func NewMQManager(addr string, topicx string, worker int) (*MQManager, error) {
-	topics := stringsx.Splict(topicx, ",")
+	topics := stringsx.Split(topicx, ",")
 	if len(topics) == 0 {
 		return nil, ErrInvalidTopic
 	}
@@ -85,7 +85,7 @@ func NewMQManager(addr string, topicx string, worker int) (*MQManager, error) {
 
 // 每个topic创建 worker个生产者，所有的topic必须包含在NewMQManager 的topicx 之内
 func (mm *MQManager) NewProducers(topicx string) error {
-	topics := stringsx.Splict(topicx, ",")
+	topics := stringsx.Split(topicx, ",")
 	if len(topics) == 0 {
 		return ErrInvalidTopic
 	}
@@ -114,7 +114,7 @@ func (mm *MQManager) NewProducers(topicx string) error {
 
 // 每个topic创建 worker个消费者，所有的topic必须包含在NewMQManager 的topicx 之内
 func (mm *MQManager) NewConsumers(topicx string) error {
-	topics := stringsx.Splict(topicx, ",")
+	topics := stringsx.Split(topicx, ",")
 	if len(topics) == 0 {
 		return ErrInvalidTopic
 	}

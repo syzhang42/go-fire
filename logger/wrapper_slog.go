@@ -50,7 +50,7 @@ func getFileAndLine() string {
 	if !ok {
 		return "unknown"
 	}
-	files := stringsx.Splict(file, "/")
+	files := stringsx.Split(file, "/")
 	if len(file) < 2 {
 		return file + ":" + strconv.Itoa(line)
 	} else {
