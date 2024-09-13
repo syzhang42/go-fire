@@ -11,21 +11,27 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/apache/pulsar-client-go/pulsar/log"
 	"github.com/syzhang42/go-fire/auth"
-	"github.com/syzhang42/go-fire/utils"
+)
+
+var (
+	addr   = ""
+	topicx = "a,b"
+	worker = 4
+	Topics = []string{"a", "b"}
 )
 
 func TestPulsar(t *testing.T) {
-	mm, err := NewMQManager(utils.PulsarAddr, utils.PulsarTopicx, utils.PulsarWorker)
+	mm, err := NewMQManager(addr, topicx, worker)
 	if err != nil {
 		panic(err)
 	}
 
-	err = mm.NewProducers(utils.PulsarTopicx)
+	err = mm.NewProducers(topicx)
 	if err != nil {
 		panic(err)
 	}
 
-	err = mm.NewConsumers(utils.PulsarTopicx)
+	err = mm.NewConsumers(topicx)
 	if err != nil {
 		panic(err)
 	}
@@ -35,7 +41,7 @@ func TestPulsar(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		mm.Recv(ctxexit, 1, utils.PulsarTopics[0], func(b Message) {
+		mm.Recv(ctxexit, 1, Topics[0], func(b Message) {
 			if b != nil && b.Payload() != nil {
 				fmt.Println("data:", string(b.Payload()), "idc:", b.Key())
 
@@ -45,7 +51,7 @@ func TestPulsar(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		go mm.Recv(ctxexit, 1, utils.PulsarTopics[1], func(b Message) {
+		go mm.Recv(ctxexit, 1, Topics[1], func(b Message) {
 			if b != nil && b.Payload() != nil {
 				fmt.Println("data:", string(b.Payload()), "idc:", b.Key())
 
@@ -54,11 +60,11 @@ func TestPulsar(t *testing.T) {
 	}()
 
 	for i := 0; i < 10; i++ {
-		mm.Send(utils.PulsarTopics[0], context.Background(), []byte(fmt.Sprintf("%v:%v", utils.PulsarTopics[0], i)), &ProducerOption{
+		mm.Send(Topics[0], context.Background(), []byte(fmt.Sprintf("%v:%v", Topics[0], i)), &ProducerOption{
 			Key:                "dx",
 			DisableReplication: true,
 		})
-		mm.Send(utils.PulsarTopics[1], context.Background(), []byte(fmt.Sprintf("%v:%v", utils.PulsarTopics[1], i)), &ProducerOption{
+		mm.Send(Topics[1], context.Background(), []byte(fmt.Sprintf("%v:%v", Topics[1], i)), &ProducerOption{
 			Key:                "dx",
 			DisableReplication: true,
 		})
@@ -71,7 +77,7 @@ func TestPulsar(t *testing.T) {
 func TestPulsarTxn(t *testing.T) {
 	c, err := pulsar.NewClient(
 		pulsar.ClientOptions{
-			URL:                     utils.PulsarAddr,
+			URL:                     addr,
 			MaxConnectionsPerBroker: 10,
 			Logger:                  log.NewLoggerWithLogrus(defaultLogger),
 			EnableTransaction:       true,
@@ -79,15 +85,15 @@ func TestPulsarTxn(t *testing.T) {
 	auth.Must(err)
 
 	consumer, err := c.Subscribe(pulsar.ConsumerOptions{
-		Topic:                      utils.PulsarTopics[0],
-		SubscriptionName:           "sub-" + utils.PulsarTopics[0],
+		Topic:                      Topics[0],
+		SubscriptionName:           "sub-" + Topics[0],
 		Type:                       pulsar.Shared,
 		ReplicateSubscriptionState: true,
 	})
 	auth.Must(err)
 
 	producer, err := c.CreateProducer(pulsar.ProducerOptions{
-		Topic:                   utils.PulsarTopics[0],
+		Topic:                   Topics[0],
 		SendTimeout:             5 * time.Second,
 		DisableBlockIfQueueFull: true,
 		MaxPendingMessages:      10000,

@@ -42,7 +42,6 @@ type Client interface {
 	Close()
 }
 
-// 每个client 一个消费者或者一个生产者    每个topic 每个worker对应一个client
 type MQManager struct {
 	addr      string
 	clients   map[string][]Client
@@ -50,6 +49,7 @@ type MQManager struct {
 	producers map[string][]Producer
 }
 
+// 每个client 一个消费者或者一个生产者    每个topic 每个worker对应一个client
 func NewMQManager(addr string, topicx string, worker int) (*MQManager, error) {
 	topics := stringsx.Split(topicx, ",")
 	if len(topics) == 0 {
@@ -170,6 +170,7 @@ func (mm *MQManager) Recv(exitCtx context.Context, timeOut int64, topic string, 
 	if consumers, ok := mm.consumers[topic]; ok && len(consumers) > 0 {
 		for index, consumer := range consumers {
 			wg.Add(1)
+			consumer := consumer
 			go func(index int) {
 				defer wg.Done()
 				for {
