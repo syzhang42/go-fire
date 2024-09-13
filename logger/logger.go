@@ -1,3 +1,4 @@
+// 搬运自github.com/cocktail828/go-tools
 package logger
 
 type Config struct {
