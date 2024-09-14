@@ -8,13 +8,13 @@ import (
 
 type errCode int
 
-type _error struct {
+type Error struct {
 	code  int
 	desc  string
 	cause error
 }
 
-var code2Error map[errCode]*_error = map[errCode]*_error{}
+var code2Error map[errCode]*Error = map[errCode]*Error{}
 
 /*
 注册一个code码,code码保证全局唯一，否则panic。请在初始化逻辑内调用。
@@ -32,40 +32,40 @@ var (
 */
 func RegErr(code int, desc string) errCode {
 	if code2Error == nil {
-		code2Error = make(map[errCode]*_error, 0)
+		code2Error = make(map[errCode]*Error, 0)
 	}
 	if _, ok := code2Error[errCode(code)]; ok {
 		panic("not use same code")
 	}
-	newError := &_error{
+	newError := &Error{
 		code: code,
 		desc: desc,
 	}
 	code2Error[errCode(code)] = newError
 	return errCode(code)
 }
-func GetAllRegCodes() map[errCode]*_error {
+func GetAllRegCodes() map[errCode]*Error {
 	return code2Error
 }
 func (ec errCode) Code() int { return int(ec) }
 
-func (ec errCode) ToError() *_error {
+func (ec errCode) ToError() *Error {
 	return code2Error[ec]
 }
 
-func (ec errCode) WithError(err error) *_error {
+func (ec errCode) WithError(err error) *Error {
 	return code2Error[ec].WithError(err)
 }
 
-func (ec errCode) WithMessage(msg string) *_error {
+func (ec errCode) WithMessage(msg string) *Error {
 	return code2Error[ec].WithMessage(msg)
 }
 
-func (ec errCode) WithMessagef(format string, args ...interface{}) *_error {
+func (ec errCode) WithMessagef(format string, args ...interface{}) *Error {
 	return code2Error[ec].WithMessagef(format, args...)
 }
 
-func (e *_error) WithError(err error) *_error {
+func (e *Error) WithError(err error) *Error {
 	if e.cause == nil {
 		e.cause = err
 	} else {
@@ -74,7 +74,7 @@ func (e *_error) WithError(err error) *_error {
 	return e
 }
 
-func (e *_error) WithMessage(msg string) *_error {
+func (e *Error) WithMessage(msg string) *Error {
 	if e.cause == nil {
 		e.cause = errors.New(msg)
 	} else {
@@ -83,7 +83,7 @@ func (e *_error) WithMessage(msg string) *_error {
 	return e
 }
 
-func (e *_error) WithMessagef(format string, args ...interface{}) *_error {
+func (e *Error) WithMessagef(format string, args ...interface{}) *Error {
 	if e.cause == nil {
 		e.cause = errors.Errorf(format, args...)
 	} else {
@@ -92,13 +92,13 @@ func (e *_error) WithMessagef(format string, args ...interface{}) *_error {
 	return e
 }
 
-func (e *_error) Error() string {
+func (e *Error) Error() string {
 	if e.cause == nil {
 		return fmt.Sprintf("[Code:%v, Desc:'%v']", e.code, e.desc)
 	}
 	return fmt.Sprintf("[Code:%v, Msg:'%v']", e.code, e.desc) + ": " + e.cause.Error()
 }
 
-func (e *_error) Cause() error {
+func (e *Error) Cause() error {
 	return e.cause
 }
