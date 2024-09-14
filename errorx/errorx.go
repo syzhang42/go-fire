@@ -102,3 +102,7 @@ func (e *Error) Error() string {
 func (e *Error) Cause() error {
 	return e.cause
 }
+
+func (e *Error) Code() int {
+	return e.code
+}
