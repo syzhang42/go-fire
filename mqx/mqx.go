@@ -211,7 +211,6 @@ func (mm *MQManager) Recv(exitCtx context.Context, timeOut int64, topic string, 
 	} else {
 		fmt.Println(topic, ":recv failed,err: len(consumer)==0")
 	}
-	go func() {
-		wg.Wait()
-	}()
+
+	wg.Wait()
 }
