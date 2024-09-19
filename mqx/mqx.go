@@ -164,7 +164,7 @@ func (mm *MQManager) Send(topic string, ctx context.Context, data []byte, opt *P
 }
 
 // exitCtx：优雅退出上下文，在你想要结束监听的地方cancel
-// 超时时间：second
+// Millisecond
 func (mm *MQManager) Recv(exitCtx context.Context, timeOut int64, topic string, msgcb func(Message)) {
 	var wg sync.WaitGroup
 	if consumers, ok := mm.consumers[topic]; ok && len(consumers) > 0 {
@@ -179,7 +179,7 @@ func (mm *MQManager) Recv(exitCtx context.Context, timeOut int64, topic string, 
 						fmt.Println(topic, index, ": recv go exit...")
 						return
 					default:
-						ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeOut)*time.Second)
+						ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeOut)*time.Millisecond)
 						defer cancel()
 						msg, err := consumer.Recv(ctx)
 						if err != nil {
