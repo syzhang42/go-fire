@@ -14,6 +14,15 @@ type Error struct {
 	cause error
 }
 
+func copyError(in *Error) (out *Error) {
+	out = &Error{
+		code:  in.code,
+		desc:  in.desc,
+		cause: in.cause,
+	}
+	return
+}
+
 var code2Error map[errCode]*Error = map[errCode]*Error{}
 
 /*
@@ -54,15 +63,15 @@ func (ec errCode) ToError() *Error {
 }
 
 func (ec errCode) WithError(err error) *Error {
-	return code2Error[ec].WithError(err)
+	return copyError(code2Error[ec]).WithError(err)
 }
 
 func (ec errCode) WithMessage(msg string) *Error {
-	return code2Error[ec].WithMessage(msg)
+	return copyError(code2Error[ec]).WithMessage(msg)
 }
 
 func (ec errCode) WithMessagef(format string, args ...interface{}) *Error {
-	return code2Error[ec].WithMessagef(format, args...)
+	return copyError(code2Error[ec]).WithMessagef(format, args...)
 }
 
 func (e *Error) WithError(err error) *Error {
