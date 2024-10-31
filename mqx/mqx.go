@@ -179,8 +179,8 @@ func (mm *MQManager) Recv(exitCtx context.Context, timeOut int64, topic string, 
 						fmt.Println(topic, index, ": recv go exit...")
 						return
 					default:
-						ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeOut)*time.Millisecond)
-						defer cancel()
+						ctx, _ := context.WithTimeout(context.Background(), time.Duration(timeOut)*time.Millisecond)
+						// defer cancel()
 						msg, err := consumer.Recv(ctx)
 						if err != nil {
 							if strings.Contains(err.Error(), "No more data") {
