@@ -1,11 +1,12 @@
 module github.com/syzhang42/go-fire
 
-go 1.20
+go 1.21
 
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/apache/pulsar-client-go v0.13.0
 	github.com/go-playground/validator/v10 v10.22.1
+	github.com/google/uuid v1.4.0
 	github.com/lestrrat/go-file-rotatelogs v0.0.0-20180223000712-d3151e2a480f
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
