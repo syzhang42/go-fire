@@ -1,18 +1,50 @@
 package fmtx
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
 
+// 适用于简单性map
 func PrintMap[T1 comparable, T2 any](in map[T1]T2) {
+	fmt.Printf("Total %v elements:\n", len(in))
 	for key, value := range in {
-		fmt.Printf("Key: %+v, Value: %+v\n", key, value)
+		fmt.Printf("\tKey: %+v, Value: %+v\n", key, value)
 	}
 }
-func PrintSlice[T any](in []T) {
+
+// 所有参数必须可见
+func PrintMapJson[T1 comparable, T2 any](in map[T1]T2) {
+	fmt.Printf("Total %v elements:\n", len(in))
 	for key, value := range in {
-		fmt.Printf("%v:%+v\n", key, value)
+		inJSON, err := json.Marshal(value)
+		if err != nil {
+			fmt.Printf("print error:%v,not use it\n", err)
+			return
+		}
+		fmt.Printf("\tKey: %+v, Value: %+v\n", key, string(inJSON))
+	}
+}
+
+// 适用于简单性slice
+func PrintSlice[T any](in []T) {
+	fmt.Printf("Total %v elements:\n", len(in))
+	for key, value := range in {
+		fmt.Printf("\t%v:%+v\n", key, value)
+	}
+}
+
+// // 所有参数必须可见
+func PrintSliceJson[T any](in []T) {
+	fmt.Printf("Total %v elements:\n", len(in))
+	for key, value := range in {
+		valueJSON, err := json.Marshal(value)
+		if err != nil {
+			fmt.Printf("print error:%v,not use it\n", err)
+			return
+		}
+		fmt.Printf("\t%v:%+v\n", key, string(valueJSON))
 	}
 }
 
