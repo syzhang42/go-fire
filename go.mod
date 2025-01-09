@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.4.0
 	github.com/lestrrat/go-file-rotatelogs v0.0.0-20180223000712-d3151e2a480f
 	github.com/sirupsen/logrus v1.9.3
+	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
 	golang.org/x/sys v0.20.0
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
@@ -26,6 +27,7 @@ require (
 	github.com/lestrrat/go-envload v0.0.0-20180220120943-6ed08b54a570 // indirect
 	github.com/lestrrat/go-strftime v0.0.0-20180220042222-ba3bf9c1d042 // indirect
 	github.com/tebeka/strftime v0.1.5 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 )

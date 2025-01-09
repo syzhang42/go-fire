@@ -22,11 +22,11 @@
 package lumberjack
 
 import (
-	"bytes"
 	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -86,12 +86,6 @@ type Logger struct {
 	// rotated. It defaults to 100 megabytes.
 	MaxSize int `json:"maxsize" yaml:"maxsize"`
 
-	// Async will cache log and flush on need(30s timeout or buffer is full)
-	Async bool `json:"async" yaml:"async"`
-
-	// bufsize define the buffer size, default size 5Mb
-	BufSize int `json:"bufsize" yaml:"bufsize"`
-
 	// MaxAge is the maximum number of days to retain old log files based on the
 	// timestamp encoded in their filename.  Note that a day is defined as 24
 	// hours and may not exactly correspond to calendar days due to daylight
@@ -110,60 +104,212 @@ type Logger struct {
 	LocalTime bool `json:"localtime" yaml:"localtime"`
 
 	// Compress determines if the rotated log files should be compressed
-	// using gzip. The default is not to perform compression.
+	// using gzip.
 	Compress bool `json:"compress" yaml:"compress"`
 
-	size        int64
-	file        *os.File
-	mu          sync.Mutex
-	buffer      *bytes.Buffer
-	lastFlushAt int64
+	// CacheMaxCount determines async. buffer max size. Default is defaultCacheMaxCount.
+	CacheMaxCount int `json:"maxcount" yaml:"maxcount"`
+	// BatchSize determines trigger batch write event. default is defaultBatchSize
+	BatchSize int `json:"batchsize" yaml:"batchsize"`
+
+	// Async determines wite mode.Will Flush log in buffer at first if Async is true.
+	Async bool `json:"async" yaml:"async"`
+
+	Wash int `json:"wash" yaml:"wash"`
+
+	size int64
+	file *os.File
+	mu   sync.Mutex
 
 	millCh    chan bool
 	startMill sync.Once
+
+	buffer []byte
+
+	writeEvent chan bool
+	stop       chan bool
+	w          sync.WaitGroup
+	cacheSize  int
 }
+
+/*
+type logMeta struct{
+	buf []byte
+}
+*/
 
 var (
 	// currentTime exists so it can be mocked out by tests.
 	currentTime = time.Now
 
 	// os_Stat exists so it can be mocked out by tests.
-	osStat = os.Stat
+	os_Stat = os.Stat
 
 	// megabyte is the conversion factor between MaxSize and bytes.  It is a
 	// variable so tests can mock it out and not need to write megabytes of data
 	// to disk.
 	megabyte = 1024 * 1024
 
-	forceFlushInterval = int64(time.Second * 30)
+	// maxEvent is the size of write events
+	maxEvent = 10
+
+	//
+	defaultCacheMaxCount = -1
+
+	defaultBatchSize = 16 * 1024
+
+	defaultWatch = 60
 )
 
-// Write implements io.Writer.  If a write would cause the log file to be larger
+// Start the flush routine.
+func (l *Logger) Start() {
+	if l.CacheMaxCount == 0 {
+		l.CacheMaxCount = defaultCacheMaxCount
+	}
+
+	if l.BatchSize <= 0 {
+		l.BatchSize = defaultBatchSize
+	}
+
+	if l.Wash <= 0 {
+		l.Wash = defaultWatch
+	}
+
+	l.writeEvent = make(chan bool, maxEvent)
+	l.stop = make(chan bool, 1)
+	l.buffer = make([]byte, 0, 1024)
+
+	go func() {
+		l.w.Add(1)
+		defer l.w.Done()
+
+		ticker := time.NewTicker(time.Duration(l.Wash) * time.Second)
+		for {
+			select {
+			case <-ticker.C:
+				l.mu.Lock()
+				if len(l.buffer) <= 0 {
+					l.mu.Unlock()
+					break
+				}
+				buffer := make([]byte, len(l.buffer))
+				copy(buffer, l.buffer[0:])
+				l.buffer = append(l.buffer[0:0], l.buffer[len(l.buffer):]...)
+				l.cacheSize = 0
+				l.mu.Unlock()
+
+				if len(buffer) > 0 {
+					_, e := l.writeWithoutLock(buffer)
+					if e != nil {
+						fmt.Println("Logger write:", e.Error())
+					}
+				}
+
+			case <-l.writeEvent:
+				l.mu.Lock()
+				buffer := make([]byte, len(l.buffer))
+				copy(buffer, l.buffer[0:])
+				l.buffer = append(l.buffer[0:0], l.buffer[len(l.buffer):]...)
+				l.cacheSize = 0
+				l.mu.Unlock()
+
+				if len(buffer) > 0 {
+					_, e := l.writeWithoutLock(buffer)
+					if e != nil {
+						fmt.Println("Logger write:", e.Error())
+					}
+				}
+			case <-l.stop:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
+}
+
+// Stop the async. flush goroutine,and flush all buffer in files
+func (l *Logger) Stop() {
+	l.stop <- true
+	l.w.Wait()
+
+	l.mu.Lock()
+	buffer := make([]byte, len(l.buffer))
+	copy(buffer, l.buffer[0:])
+	l.buffer = append(l.buffer[0:0], l.buffer[len(l.buffer):]...)
+	l.mu.Unlock()
+
+	if len(buffer) > 0 {
+
+		_, e := l.writeWithoutLock(buffer)
+		if e != nil {
+			fmt.Println("Logger write:", e.Error())
+		}
+	}
+}
+
+// asyncWrite implements io.Writer.Will drop log if buffer length greater than CacheMaxCount, only if CacheMaxCount ==-1.
+func (l *Logger) Write(p []byte) (n int, err error) {
+	if !l.Async {
+		return l.write(p)
+	}
+	return l.asyncWrite(p)
+}
+
+// asyncWrite write p in buffer .
+func (l *Logger) asyncWrite(p []byte) (n int, err error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.CacheMaxCount > defaultCacheMaxCount && len(l.buffer) > l.CacheMaxCount {
+		return 0, errors.New("log buf not enough")
+	}
+	l.buffer = append(l.buffer, p...)
+
+	l.cacheSize = l.cacheSize + 1
+	if l.cacheSize > l.BatchSize && len(l.writeEvent) < maxEvent {
+		select {
+		case l.writeEvent <- true:
+		default:
+		}
+	}
+
+	return 0, nil
+}
+
+func (l *Logger) writeWithoutLock(p []byte) (n int, err error) {
+	writeLen := int64(len(p))
+	if writeLen > l.max() {
+		return 0, fmt.Errorf(
+			"write length %d exceeds maximum file size %d", writeLen, l.max(),
+		)
+	}
+
+	if l.file == nil {
+		if err = l.openExistingOrNew(len(p)); err != nil {
+			return 0, err
+		}
+	}
+
+	if l.size+writeLen > l.max() {
+		if err := l.rotate(); err != nil {
+			return 0, err
+		}
+	}
+
+	n, err = l.file.Write(p)
+	l.size += int64(n)
+
+	return n, err
+}
+
+// write implements sync. write in io.Writer.  If a write would cause the log file to be larger
 // than MaxSize, the file is closed, renamed to include a timestamp of the
 // current time, and a new log file is created using the original log file name.
 // If the length of the write is greater than MaxSize, an error is returned.
-func (l *Logger) Write(p []byte) (n int, err error) {
+func (l *Logger) write(p []byte) (n int, err error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if l.Async {
-		if l.buffer == nil {
-			l.buffer = bytes.NewBuffer(make([]byte, l.BufSize))
-		}
-
-		now := time.Now().Unix()
-		if l.buffer.Available() > len(p) && l.lastFlushAt+forceFlushInterval > now {
-			return l.buffer.Write(p)
-		}
-
-		l.lastFlushAt = now
-		defer l.buffer.Reset()
-		l.writeLocked(l.buffer.Bytes())
-	}
-	return l.writeLocked(p)
-}
-
-func (l *Logger) writeLocked(p []byte) (n int, err error) {
 	writeLen := int64(len(p))
 	if writeLen > l.max() {
 		return 0, fmt.Errorf(
@@ -234,14 +380,14 @@ func (l *Logger) rotate() error {
 // openNew opens a new log file for writing, moving any old log file out of the
 // way.  This methods assumes the file has already been closed.
 func (l *Logger) openNew() error {
-	err := os.MkdirAll(l.dir(), 0755)
+	err := os.MkdirAll(l.dir(), 0744)
 	if err != nil {
 		return fmt.Errorf("can't make directories for new logfile: %s", err)
 	}
 
 	name := l.filename()
-	mode := os.FileMode(0600)
-	info, err := osStat(name)
+	mode := os.FileMode(0644)
+	info, err := os_Stat(name)
 	if err == nil {
 		// Copy the mode off the old logfile.
 		mode = info.Mode()
@@ -293,7 +439,7 @@ func (l *Logger) openExistingOrNew(writeLen int) error {
 	l.mill()
 
 	filename := l.filename()
-	info, err := osStat(filename)
+	info, err := os_Stat(filename)
 	if os.IsNotExist(err) {
 		return l.openNew()
 	}
@@ -316,7 +462,7 @@ func (l *Logger) openExistingOrNew(writeLen int) error {
 	return nil
 }
 
-// filename generates the name of the logfile from the current time.
+// genFilename generates the name of the logfile from the current time.
 func (l *Logger) filename() string {
 	if l.Filename != "" {
 		return l.Filename
@@ -347,7 +493,10 @@ func (l *Logger) millRunOnce() error {
 		for _, f := range files {
 			// Only count the uncompressed log file or the
 			// compressed log file, not both.
-			fn := strings.TrimSuffix(f.Name(), compressSuffix)
+			fn := f.Name()
+			if strings.HasSuffix(fn, compressSuffix) {
+				fn = fn[:len(fn)-len(compressSuffix)]
+			}
 			preserved[fn] = true
 
 			if len(preserved) > l.MaxBackups {
@@ -401,7 +550,7 @@ func (l *Logger) millRunOnce() error {
 // millRun runs in a goroutine to manage post-rotation compression and removal
 // of old log files.
 func (l *Logger) millRun() {
-	for range l.millCh {
+	for _ = range l.millCh {
 		// what am I going to do, log this?
 		_ = l.millRunOnce()
 	}
@@ -423,24 +572,24 @@ func (l *Logger) mill() {
 // oldLogFiles returns the list of backup log files stored in the same
 // directory as the current log file, sorted by ModTime
 func (l *Logger) oldLogFiles() ([]logInfo, error) {
-	files, err := os.ReadDir(l.dir())
+	files, err := ioutil.ReadDir(l.dir())
 	if err != nil {
 		return nil, fmt.Errorf("can't read log file directory: %s", err)
 	}
 	logFiles := []logInfo{}
 
 	prefix, ext := l.prefixAndExt()
+
 	for _, f := range files {
 		if f.IsDir() {
 			continue
 		}
-		info, _ := f.Info()
 		if t, err := l.timeFromName(f.Name(), prefix, ext); err == nil {
-			logFiles = append(logFiles, logInfo{t, info})
+			logFiles = append(logFiles, logInfo{t, f})
 			continue
 		}
 		if t, err := l.timeFromName(f.Name(), prefix, ext+compressSuffix); err == nil {
-			logFiles = append(logFiles, logInfo{t, info})
+			logFiles = append(logFiles, logInfo{t, f})
 			continue
 		}
 		// error parsing means that the suffix at the end was not generated
@@ -497,7 +646,7 @@ func compressLogFile(src, dst string) (err error) {
 	}
 	defer f.Close()
 
-	fi, err := osStat(src)
+	fi, err := os_Stat(src)
 	if err != nil {
 		return fmt.Errorf("failed to stat log file: %v", err)
 	}
