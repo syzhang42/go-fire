@@ -26,4 +26,5 @@ func TestAnyToTimeDuration(t *testing.T) {
 	fmt.Println(AnyToTimeDuration("1.93", time.Second))
 	fmt.Println(AnyToTimeDuration("1.93s", time.Second))
 	fmt.Println(AnyToTimeDuration("2m", time.Minute))
+	fmt.Println(AnyToTimeDuration("2ms", time.Minute))
 }

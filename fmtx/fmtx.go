@@ -62,3 +62,13 @@ func FormatSlice[T any](in []T) string {
 	}
 	return strings.Join(temp, "\n")
 }
+
+// 有风险，使用后test下是否是自己想要的
+func FormatOtherJson[T any](in T) string {
+	valueJSON, err := json.Marshal(in)
+	if err != nil {
+		fmt.Printf("error:%v,not use it\n", err)
+		return fmt.Sprintf("error:%v,not use it\n", err)
+	}
+	return string(valueJSON)
+}

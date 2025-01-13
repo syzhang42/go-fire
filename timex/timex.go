@@ -10,7 +10,7 @@ import (
 var (
 	reInt   = regexp.MustCompile(`^[+-]?\d+$`)
 	reFloat = regexp.MustCompile(`^[+-]?\d*\.\d+$`)
-	reDur   = regexp.MustCompile(`^\d+(\.\d+)?[smh]$`)
+	reDur   = regexp.MustCompile(`^\d+(\.\d+)?(ns|µs|us|ms|s|m|h)$`)
 )
 
 func AnyToTimeDuration[T any](in T, level time.Duration) (time.Duration, error) {
@@ -54,7 +54,6 @@ func AnyToTimeDuration[T any](in T, level time.Duration) (time.Duration, error) 
 			}
 		}
 		if reDur.MatchString(v) {
-
 			if dur, err := time.ParseDuration(v); err == nil {
 				return dur, nil
 			}
