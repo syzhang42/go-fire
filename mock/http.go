@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	httpx "github.com/syzhang42/go-fire/net_x/http_x"
+	"github.com/syzhang42/go-fire/net_x/httpx"
 )
 
 func RunHttpServer(host string) (stop chan<- struct{}, err error) {

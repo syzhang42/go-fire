@@ -102,3 +102,27 @@ func NewHttpClient(opts ...Optionx) *http.Client {
 		Transport: tr,
 	}
 }
+
+func NewHttpClientWithTimeOut(timeout time.Duration, opts ...Optionx) *http.Client {
+	tr := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: defaultTransportDialContext(&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}),
+
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   10,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+	for _, opt := range opts {
+		opt(tr)
+	}
+	return &http.Client{
+		Timeout:   timeout,
+		Transport: tr,
+	}
+}
