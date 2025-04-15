@@ -72,3 +72,12 @@ func FormatOtherJson[T any](in T) string {
 	}
 	return string(valueJSON)
 }
+func FormatOtherJsonIndent[T any](in T) string {
+
+	valueJSON, err := json.MarshalIndent(in, "", "  ")
+	if err != nil {
+		fmt.Printf("error: %v, not use it\n", err)
+		return fmt.Sprintf("error: %v, not use it\n", err)
+	}
+	return string(valueJSON)
+}
