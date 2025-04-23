@@ -9,3 +9,7 @@ func Split(str1 string, str2 string) []string {
 	}
 	return strs
 }
+
+func StripSpaces(str string) string {
+	return strings.ReplaceAll(str, " ", "")
+}
