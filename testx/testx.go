@@ -11,7 +11,7 @@ import (
 
 	"golang.org/x/time/rate"
 
-	"github.com/syzhang42/go-fire/heapx"
+	"github.com/syzhang42/go-fire/STL/heapx"
 )
 
 type option func(t *Testx)

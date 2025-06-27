@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/apache/pulsar-client-go/pulsar"
-	"github.com/syzhang42/go-fire/stringsx"
+	"github.com/syzhang42/go-fire/STL/stringsx"
 )
 
 type ProducerOption struct {
